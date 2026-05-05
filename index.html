@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp UI - Auth Authorized</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <style>
+        body { font-family: 'Plus+Jakarta+Sans', sans-serif; background-color: #efe7dd; overflow: hidden; }
+        .ui-corner { border-radius: 2.5rem; }
+        .bg-wa { background-color: #075E54; }
+        .bg-wa-light { background-color: #25D366; }
+        
+        @keyframes soft-pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0px rgba(37, 211, 102, 0); }
+            50% { transform: scale(1.05); box-shadow: 0 15px 35px rgba(37, 211, 102, 0.4); }
+        }
+        .animate-slow { animation: soft-pulse 4s infinite ease-in-out; }
+
+        .owner-badge {
+            background: linear-gradient(90deg, #ef4444, #f59e0b);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+
+        #bigPanel {
+            display: none;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #bigPanel.show { display: flex; opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div id="authScreen" class="fixed inset-0 z-[100] bg-wa flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-sm ui-corner p-10 shadow-2xl text-center border-b-8 border-wa-light">
+            <div class="w-20 h-20 bg-wa-light rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08s5.97 1.09 6 3.08c-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+            </div>
+            <h2 class="text-2xl font-black text-slate-800 mb-6">Iniciar Sesión</h2>
+            
+            <div class="space-y-4 flex flex-col items-center">
+                <div id="g_id_onload"
+                     data-client_id="845258622529-uqm53f937i8p8p7q67p2p68v1r5a38v7.apps.googleusercontent.com" 
+                     data-callback="handleCredentialResponse"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="outline" data-text="signin_with" data-size="large" data-logo_alignment="left"></div>
+
+                <div class="py-2 flex items-center w-full gap-2">
+                    <hr class="flex-grow"> <span class="text-[10px] font-bold text-slate-300 uppercase">O Manual</span> <hr class="flex-grow">
+                </div>
+
+                <input type="email" id="emailInput" class="w-full h-14 bg-slate-100 rounded-2xl px-6 outline-none border-2 border-transparent focus:border-wa-light font-bold text-slate-700" placeholder="tu@email.com">
+                <button onclick="loginManual()" class="w-full h-14 bg-wa-light text-white ui-corner font-black text-lg hover:bg-emerald-600 transition-all shadow-md">
+                    CREAR CUENTA
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <main id="mainApp" class="hidden h-screen flex flex-col">
+        <nav class="bg-wa p-6 text-white flex justify-between items-center shadow-xl">
+            <div class="flex items-center gap-4">
+                <img id="userImg" src="" class="w-10 h-10 rounded-full border-2 border-white/20 hidden">
+                <div id="userInitial" class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-black">?</div>
+                <div class="flex flex-col">
+                    <span id="playerEmail" class="text-sm font-bold opacity-80">---</span>
+                    <span id="ownerTag" class="hidden owner-badge text-[9px] font-black px-3 py-0.5 rounded-full uppercase w-fit mt-1">OWNER</span>
+                </div>
+            </div>
+            <button onclick="toggleLang()" id="langBtn" class="px-5 py-2 bg-white/10 hover:bg-white/20 ui-corner text-[10px] font-black uppercase tracking-widest">English</button>
+        </nav>
+
+        <div class="flex-grow flex flex-col items-center justify-center p-6 text-center">
+            <h1 id="welcomeTitle" class="text-4xl font-black text-slate-800 mb-8 tracking-tighter">¡Hola de nuevo!</h1>
+            
+            <button onclick="openPanel()" class="animate-slow flex items-center gap-6 bg-white p-7 ui-corner shadow-2xl border border-white active:scale-95 transition-transform">
+                <div class="bg-wa-light p-4 rounded-2xl text-white shadow-lg">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                </div>
+                <div class="text-left">
+                    <p id="chatLabel" class="text-slate-900 font-black text-2xl leading-tight">Chatear gratis</p>
+                    <p id="joinLabel" class="text-wa-light text-[11px] font-bold uppercase tracking-widest">¿Unirse ahora?</p>
+                </div>
+            </button>
+        </div>
+    </main>
+
+    <div id="bigPanel" class="fixed inset-0 z-[200] bg-black/50 backdrop-blur-md items-center justify-center p-4">
+        <div class="bg-white w-full max-w-5xl h-[85vh] ui-corner shadow-2xl flex flex-col relative overflow-hidden">
+            <div class="p-6 bg-slate-50 border-b flex justify-between items-center">
+                <h2 id="panelTitle" class="text-xl font-black text-slate-800 uppercase tracking-tighter">Chat Global</h2>
+                <button onclick="closePanel()" class="text-slate-300 hover:text-red-500 font-black text-4xl">&times;</button>
+            </div>
+            <div id="chatBox" class="flex-grow p-8 overflow-y-auto flex flex-col gap-4 bg-[#efe7dd]"></div>
+            <div class="p-6 bg-white border-t flex gap-4 items-center">
+                <input type="text" id="chatInput" onkeypress="if(event.key==='Enter') sendMessage()" class="flex-grow h-14 bg-slate-100 rounded-2xl px-8 outline-none border-2 border-transparent focus:border-wa-light font-medium" placeholder="Escribe un mensaje...">
+                <button onclick="sendMessage()" class="h-14 w-14 bg-wa-light text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all">
+                    <svg class="w-6 h-6 rotate-90" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let lang = 'es';
+
+        // CALLBACK DE GOOGLE AUTHORISED
+        function handleCredentialResponse(response) {
+            // Decodificar el token para obtener el email (Base64)
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+            const email = payload.email;
+            const picture = payload.picture;
+
+            if (picture) {
+                document.getElementById('userImg').src = picture;
+                document.getElementById('userImg').classList.remove('hidden');
+                document.getElementById('userInitial').classList.add('hidden');
+            }
+            
+            startApp(email);
+        }
+
+        function loginManual() {
+            const email = document.getElementById('emailInput').value.trim();
+            if (!email.includes('@')) return alert("Email no válido");
+            startApp(email);
+        }
+
+        function startApp(email) {
+            document.getElementById('authScreen').style.opacity = "0";
+            setTimeout(() => {
+                document.getElementById('authScreen').style.display = 'none';
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('playerEmail').innerText = email;
+                
+                if (email.toLowerCase() === "gaelsalgado906@gmail.com") {
+                    document.getElementById('ownerTag').classList.remove('hidden');
+                }
+            }, 600);
+        }
+
+        function openPanel() { document.getElementById('bigPanel').classList.add('show'); document.getElementById('bigPanel').style.display = 'flex'; }
+        function closePanel() { document.getElementById('bigPanel').classList.remove('show'); setTimeout(() => document.getElementById('bigPanel').style.display = 'none', 500); }
+        
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            if(input.value.trim() === "") return;
+            const msg = document.createElement('div');
+            msg.className = "self-end bg-wa-light text-white p-4 rounded-3xl rounded-tr-none shadow-md max-w-sm text-sm font-bold animate-pulse";
+            msg.innerText = input.value;
+            document.getElementById('chatBox').appendChild(msg);
+            input.value = "";
+            document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
+        }
+
+        function toggleLang() {
+            const isEs = lang === 'es';
+            document.getElementById('langBtn').innerText = isEs ? "Español" : "English";
+            document.getElementById('welcomeTitle').innerText = isEs ? "Welcome back!" : "¡Hola de nuevo!";
+            document.getElementById('chatLabel').innerText = isEs ? "Free Chat" : "Chatear gratis";
+            document.getElementById('joinLabel').innerText = isEs ? "Join now?" : "¿Unirse ahora?";
+            lang = isEs ? 'en' : 'es';
+        }
+    </script>
+</body>
+</html>
